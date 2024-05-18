@@ -1,58 +1,59 @@
+import { fetchMovieCast } from "../../api/movies";
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { fetchMoviesCredits } from "../../api/movies";
+import { useParams } from 'react-router-dom';
 
-import CastItem from "./cast_item/CastItem";
-import { Loader } from "../loader/Loader";
-
-import { TbFaceIdError } from "react-icons/tb";
-import css from "./MovieCast.module.css";
 
 const MovieCast = () => {
-  const { id } = useParams();
-  const [movieCast, setMovieCast] = useState([]);
-  const [notFound, setNotFound] = useState(false);
-  const [loader, setLoader] = useState(false);
+    const { movieId } = useParams();
+    const [cast, setCast] = useState([]);
+     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (!id) return;
-    async function fetchResponse() {
-      try {
-        setLoader(true);
-        setNotFound(false);
-        const res = await fetchMoviesCredits(id);
-        const dataResults = res.data;
-        if (!(dataResults.cast.length > 0)) return setNotFound(true);
-        setMovieCast(dataResults);
-      } catch (error) {
-        console.log(error);
-        setNotFound(true);
-      } finally {
-        setLoader(false);
-      }
+    useEffect(() => {
+        const fetchCast = async () => {
+            try {
+                const castData = await fetchMovieCast(movieId);
+                setCast(castData);
+                setLoading(false);
+            } catch (error) {
+                console.error("Error fetching movie cast:", error);
+                setError("An error occurred while fetching movie cast. Please try again later.");
+                setLoading(false);
+            }
+        };
+        fetchCast();
+    }, [movieId]);
+
+    if (loading) {
+        return <div>Loading...</div>;
     }
-    fetchResponse();
-  }, [id]);
 
-  const { cast } = movieCast;
+    if (error) {
+        return <div>Error: {error}</div>;
+    }
 
-  return (
-    <div className={css.cast}>
-      {loader && <Loader />}
-      {cast?.length > 0 && (
-        <ul className={css.cast__list}>
-          {cast.map((item) => (
-            <CastItem key={item.id} item={item} />
-          ))}
-        </ul>
-      )}
-      {notFound && (
-        <div className={css.found}>
-          <TbFaceIdError />
+     return (
+        <div>
+            <h2>Movie Cast</h2>
+            {cast.length > 0 ? (
+                <ul>
+                    {cast.map(actor => (
+                        <li key={actor.id}>
+                            {actor.profile_path ? (
+                                <img src={`https://image.tmdb.org/t/p/w500/${actor.profile_path}`} alt={actor.name} width="130" />
+                            ) : (
+                                <div>No Image Available</div>
+                            )}
+                            <p>{actor.name}</p>
+                            <p>Character: {actor.character}</p>
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                <p>No cast information available.</p>
+            )}
         </div>
-      )}
-    </div>
-  );
-};
+    );
+}
 
 export default MovieCast;

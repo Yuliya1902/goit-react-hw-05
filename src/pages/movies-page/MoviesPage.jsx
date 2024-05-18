@@ -1,49 +1,63 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { fetchMoviesSearch } from "../../api/movies";
+import { searchMovies } from "../../api/movies";
 
 import MovieList from "../../components/movie-list/MovieList";
-import FormSubmit from "../../components/form_submit/FormSubmit";
-
-import { Loader } from "../../components/loader/Loader";
 
 import css from "./MoviesPage.module.css";
 
 const MoviesPage = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [movieSearch, setMovieSearch] = useState([]);
-  const [notFound, setNotFound] = useState(false);
-  const [loader, setLoader] = useState(false);
+    const [movies, setMovies] = useState([]);
+    const [error, setError] = useState(null);
+    const [searchParams, setSearchParams] = useSearchParams();
 
-  const moviesName = searchParams.get("query") ?? "";
+    useEffect(() => {
+        const fetchMovies = async () => {
+            try {
+                const queryParam = searchParams.get('query');
+                const results = await searchMovies(queryParam);
+                if (results.length === 0) {
+                    setError("No movies found for the given query.");
+                } else {
+                    setMovies(results);
+                    setError(null);
+                }
+            } catch (error) {
+                console.error('Error searching movies:', error);
+                setError("An error occurred while searching for movies.");
+            }
+        };
 
-  useEffect(() => {
-    async function fetchResponse() {
-      try {
-        setLoader(true);
-        setNotFound(false);
-        const res = await fetchMoviesSearch(moviesName);
-        const dataResults = res.data.results;
-        if (moviesName && !(dataResults.length > 0)) return setNotFound(true);
-        setMovieSearch(dataResults);
-      } catch (error) {
-        console.log(error);
-        setNotFound(true);
-      } finally {
-        setLoader(false);
-      }
-    }
-    fetchResponse();
-  }, [moviesName]);
+        if (searchParams.has('query')) {
+            fetchMovies();
+        }
+    }, [searchParams]);
 
-  return (
-    <section className={css.movies}>
-      {loader && <Loader />}
-      <FormSubmit setSearchParams={setSearchParams} />
-      <MovieList movieResults={movieSearch} />
-      {notFound && <div className={css.found}></div>}
-    </section>
-  );
+    const handleSearch = async (e) => {
+        e.preventDefault();
+        const query = e.target.elements.query.value;
+        setSearchParams({ query });
+    };
+
+    return (
+        <div className={css.container}>
+            <h2 className={css.title}>Search Movies</h2>
+            <form onSubmit={handleSearch}>
+                <input
+                    type="text"
+                    name="query"
+                    defaultValue={searchParams.get('query') || ''}
+                    placeholder="Search for a movie..."
+                    className={css.input}
+                />
+                <button type="submit" className={css.btn}>Search</button>
+            </form>
+
+            {error && <p className={css.error}>{error}</p>}
+
+            <MovieList movies={movies} />
+        </div>
+    );
 };
 
 export default MoviesPage;

@@ -1,14 +1,21 @@
-import MovieItem from "./movie-item/MovieItem";
+import { NavLink, useLocation} from 'react-router-dom';
+import css from './MovieList.module.css';
 
-import css from "./MovieList.module.css";
 
 const MovieList = ({ movies }) => {
-  return (
-    <ul className={css.list}>
-      {movies &&
-        movies.map((movie) => <MovieItem key={movie.id} item={movie} />)}
-    </ul>
-  );
+  const location = useLocation();
+  
+    return (
+        <ul className={css.list}>
+            {movies.map(movie => (
+                <li key={movie.id}>
+                    <NavLink to={`/movies/${movie.id}`} state={{ from: location }} className={css.link}>
+                        {movie.title}
+                    </NavLink>
+                </li>
+            ))}
+        </ul>
+    );
 };
 
 export default MovieList;

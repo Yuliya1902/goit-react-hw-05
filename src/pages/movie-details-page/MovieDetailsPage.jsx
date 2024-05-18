@@ -1,123 +1,70 @@
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef} from "react";
 import {
   useLocation,
   useParams,
   NavLink,
-  Link,
   Outlet,
 } from "react-router-dom";
-import { fetchMoviesDetails } from "../../api/movies";
+import { fetchMovieDetails } from "../../api/movies";
+import { MdArrowBack } from "react-icons/md";
 
-import { Loader } from "../../components/loader/Loader";
 
-import clsx from "clsx";
 import css from "./MovieDetailsPage.module.css";
 
-const buildLinkClass = ({ isActive }) => {
-  return clsx(css.nav__link, isActive && css.active);
-};
+const MovieDetails = () => {
+    const { movieId } = useParams();
+    const [movie, setMovie] = useState(null);
+    const location = useLocation();
+   const backLinkRef = useRef(location.state?.from || '/');
+    
+    console.log(backLinkRef)
 
-const MovieDetailsPage = () => {
-  const { id } = useParams();
-  const [movieDetails, setMovieDetails] = useState([]);
-  const location = useLocation();
-  const backLink = useRef(location.state ?? "/movies");
-  const [loader, setLoader] = useState(false);
+    useEffect(() => {
+        const detailsMovie = async () => {
+            const details = await fetchMovieDetails(movieId);
+            setMovie(details);
+        };
+        detailsMovie();
+    }, [movieId]); 
 
-  useEffect(() => {
-    async function fetchResponse() {
-      try {
-        setLoader(true);
-        const res = await fetchMoviesDetails(id);
-        setMovieDetails(res.data);
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setLoader(false);
-      }
-    }
-    fetchResponse();
-  }, [id]);
+    const formatScore = (score) => {
+        return `${score}%`;
+    };
 
-  const { title, poster_path, overview, release_date, vote_average, genres } =
-    movieDetails;
+    console.log(location)
 
-  return (
-    <section className={css.details}>
-      {loader && <Loader />}
-
-      <div className={css.wrapp__back}>
-        <Link to={backLink.current} className={css.back__link}>
-          Go back
-        </Link>
-      </div>
-
-      <div className={css.body}>
-        {poster_path && (
-          <div className={css.wrapp__img}>
-            <img
-              src={`https://image.tmdb.org/t/p/w500/${poster_path}`}
-              alt={title}
-            />
-          </div>
-        )}
-
-        <div className={css.wrapp__content}>
-          {title && (
-            <h2 className={css.title}>
-              {title}{" "}
-              {release_date && <span>({release_date.split("-")[0]})</span>}
-            </h2>
-          )}
-
-          <p className={css.info__list}>
-            <li className={css.text}>Users rating: {vote_average}</li>
-          </p>
-
-          {overview ? (
-            <div className={css.overview}>
-              <h3 className={css.subtitle}>Overview:</h3>
-              <p className={css.text}>{overview}</p>
-            </div>
-          ) : (
-            <div className={css.overview}>
-              <h3 className={css.subtitle}>Overview:</h3>
-              <p className={css.text}>No description</p>
-            </div>
-          )}
-
-          {genres?.length > 0 && (
-            <div className={css.genres}>
-              <h3 className={css.subtitle}>Genres:</h3>
-              <ul className={css.genres__list}>
-                {genres.map((item) => (
-                  <li key={item.id} className={css.text}>
-                    {item.name}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+    return (
+        <div >
+            <NavLink to={backLinkRef.current}  className={css.btnBack}><MdArrowBack />Go back</NavLink>
+            {movie && (
+                <div className={css.container}>
+                    <img src={`https://image.tmdb.org/t/p/w500/${movie.poster_path}`} alt={movie.title} width='250'/>
+                    <div className={css.list}>
+                        <h2 className={css.title}>{movie.title}</h2>
+                        <p className={css.score}>User Score: {formatScore(movie.vote_average)}</p>
+                        <p className={css.overview}>{movie.overview}</p>
+                        <p className={css.genres}><span>Genres</span> {movie.genres.map(genre => genre.name).join(', ')}</p>
+                    </div>
+                </div>
+            )}
+             
+            {movie && (
+                <div className={css.info}>
+                    <h4 className={css.titleInfo}>Additional information</h4>
+                    <ul className={css.listInfo}>
+                        <li>
+                            <NavLink to={`/movies/${movieId}/cast`} className={css.itemInfo}>Movie Cast</NavLink>
+                        </li>
+                        <li>
+                            <NavLink to={`/movies/${movieId}/reviews`} className={css.itemInfo}>Movie Reviews</NavLink>
+                        </li>
+                    </ul>
+                    <Outlet />
+                </div>
+            )}
         </div>
-      </div>
-
-      <ul className={css.more__list}>
-        <li>
-          <NavLink to="cast" className={buildLinkClass}>
-            Cast
-          </NavLink>
-        </li>
-        <li>
-          <NavLink to="reviews" className={buildLinkClass}>
-            Reviews
-          </NavLink>
-        </li>
-      </ul>
-      <Suspense fallback={<Loader />}>
-        <Outlet />
-      </Suspense>
-    </section>
-  );
+    );
 };
 
-export default MovieDetailsPage;
+export default MovieDetails;
+

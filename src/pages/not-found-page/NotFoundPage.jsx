@@ -1,21 +1,17 @@
-import { Link } from "react-router-dom";
 
-import { TbFaceIdError } from "react-icons/tb";
 import css from "./NotFoundPage.module.css";
 
-const NotFoundPage = () => {
-  return (
-    <section className={css.section}>
-      <div className={css.found}>
-        <TbFaceIdError />
-      </div>
-      <div className={css.wrapp__link}>
-        <Link to="/" className={css.link}>
-          Go back to home page
-        </Link>
-      </div>
-    </section>
-  );
-};
+import { Link } from 'react-router-dom';
+import { MdErrorOutline } from "react-icons/md";
 
+const NotFoundPage = () => {
+    return (
+        <div className={css.container}>
+            <h3 className={css.title}><MdErrorOutline className={css.icons} />Error</h3>
+            <Link to='/' className={css.link}>Go back</Link>
+       </div>
+   )
+
+    
+}
 export default NotFoundPage;
